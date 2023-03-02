@@ -1,7 +1,8 @@
 name: android_usb_printer
 description: android_usb_printer
 version: 0.0.1
-homepage:
+author: lixiaohong<liyufengisme@gmail.com>
+homepage: https://github.com/liyufengrex/android_usb_printer
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
