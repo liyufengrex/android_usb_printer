@@ -3,6 +3,7 @@ package io
 import android.hardware.usb.*
 import com.rex.android_usb_printer.tools.UsbDeviceHelper
 import java.lang.Exception
+import java.util.*
 
 
 /// Author       : liyufeng
@@ -96,9 +97,49 @@ class UsbConn(private val mUsbDevice: UsbDevice) {
         return true
     }
 
-    fun writeBytes(data: ByteArray): Int {
+    private fun convertVectorByteToBytes(data: Vector<Byte>): ByteArray {
+        val sendData = ByteArray(data.size)
+        if (data.size > 0) {
+            for (i in data.indices) {
+                sendData[i] = data[i] as Byte
+            }
+        }
+        return sendData
+    }
+
+    fun writeDataImmediately(data: ByteArray, singleLimit: Int): Int {
+        val total = data.size
+        if (total <= singleLimit || singleLimit < 0) {
+            return writeBytes(data)
+        } else {
+            //进行拆分切割
+            var resultTotal = 0
+            val sendData = Vector<Byte>()
+            for (index in data.indices) {
+                if (sendData.size >= singleLimit) {
+                    val result = writeBytes(convertVectorByteToBytes(sendData))
+                    sendData.clear()
+                    if (result >= 0) {
+                        resultTotal += result
+                    } else {
+                        break
+                    }
+                }
+                sendData.add(data[index])
+            }
+            if (sendData.size > 0) {
+                val result = writeBytes(convertVectorByteToBytes(sendData))
+                if (result >= 0) {
+                    resultTotal += result
+                }
+            }
+            return resultTotal
+        }
+    }
+
+    private fun writeBytes(data: ByteArray): Int {
         if (!checkConnAndReConnect()) {
-            return -1;
+            return -1
         }
         return mConnection!!.bulkTransfer(mBulkEndOut, data, data.size, 5000)
     }

@@ -77,7 +77,7 @@ class UsbDeviceHelper private constructor() {
     /**
      * 获取打印机设备
      */
-    fun queryPrinterDevices(): ArrayList<UsbDevice> {
+    private fun queryPrinterDevices(): ArrayList<UsbDevice> {
         val devices = arrayListOf<UsbDevice>()
         val deviceList = usbManager.deviceList
         val deviceIterator: Iterator<UsbDevice> = deviceList.values.iterator()
@@ -108,7 +108,7 @@ class UsbDeviceHelper private constructor() {
     fun matchUsbDevice(vId: Int, pId: Int, sId: String, position: Int): UsbDevice? {
         var usbDevice: UsbDevice? = null
         val deviceList = queryPrinterDevices()
-        val hitDevices = arrayListOf<UsbDevice>();
+        val hitDevices = arrayListOf<UsbDevice>()
         var realSID = sId
         var realSIDIndex = position
         val usbList = StringBuilder()

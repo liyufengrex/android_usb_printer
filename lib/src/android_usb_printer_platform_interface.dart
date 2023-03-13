@@ -33,7 +33,7 @@ abstract class AndroidUsbPrinterPlatform extends PlatformInterface {
   }
 
   /// 打印机发送字节数据
-  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes) {
+  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1}) {
     throw UnimplementedError('writeBytes() has not been implemented.');
   }
 

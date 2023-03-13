@@ -80,9 +80,10 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
   }
 
   @override
-  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes) {
+  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1}) {
     final params = generateDeviceMap(usbDeviceInfo);
     params['bytes'] = Uint8List.fromList(bytes);
+    params['singleLimit'] = singleLimit;
     return methodChannel
         .invokeMethod(
       'writeBytes',

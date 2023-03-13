@@ -32,6 +32,14 @@ object MethodCallParser {
         return usbDevice
     }
 
+    fun parseDeviceId(call: MethodCall): String {
+        val vID = call.argument<Int>("vId")
+        val pID = call.argument<Int>("pId")
+        val sID = call.argument<String>("sId")
+        val position = call.argument<Int>("position")
+        return "$vID - $pID - $sID - $position"
+    }
+
 }
 
 class ExUsbDevice(

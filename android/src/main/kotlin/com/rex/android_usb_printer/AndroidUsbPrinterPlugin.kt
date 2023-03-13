@@ -76,17 +76,22 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 result.success(UsbDeviceHelper.instance.queryLocalPrinterMap())
             }
             "writeBytes" -> {
-                val device = MethodCallParser.parseDevice(call)
-                if (device != null) {
-                    val usbDevice = device.usbDevice
-                    val deviceId = device.deviceId
-                    if (!usbConnCache.contains(deviceId)) {
-                        usbConnCache[deviceId] = UsbConn(usbDevice)
+                val deviceId = MethodCallParser.parseDeviceId(call)
+                if (!usbConnCache.contains(deviceId)) {
+                    val device = MethodCallParser.parseDevice(call)
+                    if (device != null) {
+                        usbConnCache[deviceId] = UsbConn(device.usbDevice)
                     }
+                }
+                if (usbConnCache[deviceId] != null) {
                     val data = call.argument<ByteArray>("bytes")
+                    var singleLimit = call.argument<Int>("singleLimit")
+                    if (singleLimit == null){
+                        singleLimit = -1
+                    }
                     if (data != null) {
                         try {
-                            val count = usbConnCache[deviceId]!!.writeBytes(data)
+                            val count = usbConnCache[deviceId]!!.writeDataImmediately(data, singleLimit)
                             result.success(count)
                         } catch (e: Exception) {
                             val error = e.message ?: ""
@@ -135,13 +140,10 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 }
             }
             "disconnect" -> {
-                val device = MethodCallParser.parseDevice(call)
-                if (device != null) {
-                    val deviceId = device.deviceId
-                    if (usbConnCache.contains(deviceId)) {
-                        usbConnCache[deviceId]!!.disconnect()
-                        usbConnCache.remove(deviceId)
-                    }
+                val deviceId = MethodCallParser.parseDeviceId(call)
+                if (usbConnCache.contains(deviceId)) {
+                    usbConnCache[deviceId]!!.disconnect()
+                    usbConnCache.remove(deviceId)
                     result.success(true)
                 } else {
                     val error = "usb 设备无法匹配"
@@ -168,12 +170,8 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 }
             }
             "removeUsbConnCache" -> {
-                val deviceInfo = MethodCallParser.parseDevice(call)
-                val device = deviceInfo?.usbDevice
-                if (device != null) {
-                    val deviceId = deviceInfo.deviceId
-                    removeConnCacheWithKey(deviceId)
-                }
+                val deviceId = MethodCallParser.parseDeviceId(call)
+                removeConnCacheWithKey(deviceId)
                 result.success(true)
             }
         }

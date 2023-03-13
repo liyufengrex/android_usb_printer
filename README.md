@@ -22,7 +22,8 @@ AndroidUsbPrinterPlatform.instance.writeBytes(
   Future<List<UsbDeviceInfo>> queryLocalUsbDevice()
 
   /// 打印机发送字节数据
-  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes)
+  /// @param singleLimit, 单次最大传输字节长度，内部会将 bytes 按照 singleLimit 阈值进行切割分组后依次 write
+  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1})
 
   /// 获取打印机连接状态
   Future<bool> checkDeviceConn(UsbDeviceInfo usbDeviceInfo)
