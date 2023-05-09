@@ -91,17 +91,23 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                         singleLimit = -1
                     }
                     if (data != null) {
-                        try {
-                            GlobalScope.launch {
-                                withContext(Dispatchers.Main) {
-                                    val count = usbConn.writeDataImmediately(data, singleLimit)
-                                    result.success(count)
+                        Thread {
+                            try {
+                                val count = usbConn.writeDataImmediately(data, singleLimit)
+                                GlobalScope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        result.success(count)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                val error = e.message ?: ""
+                                GlobalScope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        result.error("-1", error, error)
+                                    }
                                 }
                             }
-                        } catch (e: Exception) {
-                            val error = e.message ?: ""
-                            result.error("-1", error, error)
-                        }
+                        }.start()
                     } else {
                         result.success(-1)
                     }
@@ -114,17 +120,23 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 val usbConn = fetchUsbConn(call);
                 if (usbConn != null) {
                     val timeOut = call.argument<Int>("timeOut")
-                    try {
-                        GlobalScope.launch {
-                            withContext(Dispatchers.Main) {
-                                val data = usbConn.readBytes(timeOut!!)
-                                result.success(data)
+                    Thread {
+                        try {
+                            val data = usbConn.readBytes(timeOut!!)
+                            GlobalScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    result.success(data)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            val error = e.message ?: ""
+                            GlobalScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    result.error("-1", error, error)
+                                }
                             }
                         }
-                    } catch (e: Exception) {
-                        val error = e.message ?: ""
-                        result.error("-1", error, error)
-                    }
+                    }.start()
                 } else {
                     val error = "usb 设备无法匹配"
                     result.error("-1", error, error)
