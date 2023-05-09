@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:android_usb_printer/android_usb_printer.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -35,6 +37,11 @@ abstract class AndroidUsbPrinterPlatform extends PlatformInterface {
   /// 打印机发送字节数据
   Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1}) {
     throw UnimplementedError('writeBytes() has not been implemented.');
+  }
+
+  /// 接收打印机字节数据
+  Future<Uint8List?> readBytes(UsbDeviceInfo usbDeviceInfo, {int timeOut = 2000}) {
+    throw UnimplementedError('readBytes() has not been implemented.');
   }
 
   /// 获取打印机连接状态

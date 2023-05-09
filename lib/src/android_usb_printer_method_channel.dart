@@ -4,23 +4,19 @@ import 'package:android_usb_printer/android_usb_printer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'android_usb_printer_platform_interface.dart';
-import 'model/usb_device_info.dart';
-
 /// An implementation of [AndroidUsbPrinterPlatform] that uses method channels.
 class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel =
-  const MethodChannel('android_usb_printer_method_channel');
+      const MethodChannel('android_usb_printer_method_channel');
   @visibleForTesting
   final eventChannel = const EventChannel('android_usb_printer_event_channel');
 
   @override
   Stream<UsbPlugInfo> get usbPlugInfoStream {
     final stream = eventChannel.receiveBroadcastStream();
-    final transFormer =
-    StreamTransformer<dynamic, UsbPlugInfo>.fromHandlers(
+    final transFormer = StreamTransformer<dynamic, UsbPlugInfo>.fromHandlers(
       handleData: (value, sink) {
         if (value['eventType'] == 'eventTypeUsb') {
           final data = value['eventData'];
@@ -42,8 +38,8 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
               plug == UsbPlugInfoEnum.attached.value
                   ? UsbPlugInfoEnum.attached
                   : (plug == UsbPlugInfoEnum.detached.value
-                  ? UsbPlugInfoEnum.detached
-                  : UsbPlugInfoEnum.granted),
+                      ? UsbPlugInfoEnum.detached
+                      : UsbPlugInfoEnum.granted),
             );
             sink.add(usbPlugInfo);
           }
@@ -80,16 +76,28 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
   }
 
   @override
-  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1}) {
+  Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes,
+      {int singleLimit = -1}) {
     final params = generateDeviceMap(usbDeviceInfo);
     params['bytes'] = Uint8List.fromList(bytes);
     params['singleLimit'] = singleLimit;
     return methodChannel
         .invokeMethod(
-      'writeBytes',
-      params,
-    )
+          'writeBytes',
+          params,
+        )
         .then((value) => value as int);
+  }
+
+  @override
+  Future<Uint8List?> readBytes(UsbDeviceInfo usbDeviceInfo,
+      {int timeOut = 2000}) {
+    final params = generateDeviceMap(usbDeviceInfo);
+    params['timeOut'] = timeOut;
+    return methodChannel.invokeMethod(
+      'readBytes',
+      params,
+    );
   }
 
   @override
@@ -97,9 +105,9 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel
         .invokeMethod(
-      'checkDeviceConn',
-      params,
-    )
+          'checkDeviceConn',
+          params,
+        )
         .then((value) => value as bool);
   }
 
@@ -108,9 +116,9 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel
         .invokeMethod(
-      'connect',
-      params,
-    )
+          'connect',
+          params,
+        )
         .then((value) => value as bool);
   }
 
@@ -119,9 +127,9 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel
         .invokeMethod(
-      'disconnect',
-      params,
-    )
+          'disconnect',
+          params,
+        )
         .then((value) => value as bool);
   }
 
@@ -130,9 +138,9 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel
         .invokeMethod(
-      'checkDevicePermission',
-      params,
-    )
+          'checkDevicePermission',
+          params,
+        )
         .then((value) => value as bool);
   }
 
@@ -141,24 +149,24 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel
         .invokeMethod(
-      'requestDevicePermission',
-      params,
-    )
+          'requestDevicePermission',
+          params,
+        )
         .then((value) => value as bool);
   }
-
 
   @override
   Future<dynamic> removeUsbConnCache(UsbDeviceInfo usbDeviceInfo) async {
     final params = generateDeviceMap(usbDeviceInfo);
-    return methodChannel
-        .invokeMethod(
+    return methodChannel.invokeMethod(
       'requestDevicePermission',
       params,
     );
   }
 
-  Map<String, Object> generateDeviceMap(UsbDeviceInfo usbDevice,) {
+  Map<String, Object> generateDeviceMap(
+    UsbDeviceInfo usbDevice,
+  ) {
     var params = <String, Object>{};
     params['vId'] = usbDevice.vId;
     params['pId'] = usbDevice.pId;

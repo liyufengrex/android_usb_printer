@@ -1,8 +1,8 @@
 package io
 
 import android.hardware.usb.*
+import android.os.SystemClock
 import com.rex.android_usb_printer.tools.UsbDeviceHelper
-import java.lang.Exception
 import java.util.*
 
 
@@ -142,6 +142,34 @@ class UsbConn(private val mUsbDevice: UsbDevice) {
             return -1
         }
         return mConnection!!.bulkTransfer(mBulkEndOut, data, data.size, 5000)
+    }
+
+    fun readBytes(timeOut: Int): ByteArray? {
+        if (!checkConnAndReConnect()) {
+            throw Exception("printer connect fail")
+        }
+        val endTime = SystemClock.uptimeMillis() + timeOut.toLong()
+        var len: Int = -1
+        val buffer = ByteArray(1)
+        do {
+            if (mBulkEndIn == null) {
+                throw Exception("mBulkEndIn is null")
+            }
+            len = mConnection!!.bulkTransfer(mBulkEndIn, buffer, buffer.size, timeOut)
+            if (len > 0) {
+                break
+            }
+            try {
+                Thread.sleep(100L)
+            } catch (var12: InterruptedException) {
+                //暂不处理
+            }
+        } while (endTime > SystemClock.uptimeMillis())
+        return if (len > 0) {
+            buffer
+        } else {
+            null
+        }
     }
 
 }

@@ -25,6 +25,10 @@ AndroidUsbPrinterPlatform.instance.writeBytes(
   /// @param singleLimit, 单次最大传输字节长度，内部会将 bytes 按照 singleLimit 阈值进行切割分组后依次 write
   Future<int> writeBytes(UsbDeviceInfo usbDeviceInfo, List<int> bytes, {int singleLimit = -1})
 
+  /// 接收打印机字节数据
+  /// @param timeOut, timeOut毫秒内无接收数据直接返回null
+  Future<Uint8List?> readBytes(UsbDeviceInfo usbDeviceInfo, {int timeOut = 2000})
+
   /// 获取打印机连接状态
   Future<bool> checkDeviceConn(UsbDeviceInfo usbDeviceInfo)
 

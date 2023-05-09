@@ -7,14 +7,20 @@ import com.rex.android_usb_printer.tools.OnUsbListener
 import com.rex.android_usb_printer.tools.UsbDeviceHelper
 import io.UsbConn
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** AndroidUsbPrinterPlugin */
 class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler {
+    private lateinit var binaryMessenger: BinaryMessenger
     private lateinit var channel: MethodChannel
     private lateinit var eventChannel: EventChannel
 
@@ -56,12 +62,13 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         MessageSender.applicationContext = flutterPluginBinding.applicationContext
+        this.binaryMessenger = flutterPluginBinding.binaryMessenger
         channel = MethodChannel(
-            flutterPluginBinding.binaryMessenger,
+            binaryMessenger,
             "android_usb_printer_method_channel"
         )
         eventChannel =
-            EventChannel(flutterPluginBinding.binaryMessenger, "android_usb_printer_event_channel")
+            EventChannel(binaryMessenger, "android_usb_printer_event_channel")
         channel.setMethodCallHandler(this)
         eventChannel.setStreamHandler(this)
 
@@ -76,29 +83,47 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 result.success(UsbDeviceHelper.instance.queryLocalPrinterMap())
             }
             "writeBytes" -> {
-                val deviceId = MethodCallParser.parseDeviceId(call)
-                if (!usbConnCache.contains(deviceId)) {
-                    val device = MethodCallParser.parseDevice(call)
-                    if (device != null) {
-                        usbConnCache[deviceId] = UsbConn(device.usbDevice)
-                    }
-                }
-                if (usbConnCache[deviceId] != null) {
+                val usbConn = fetchUsbConn(call);
+                if (usbConn != null) {
                     val data = call.argument<ByteArray>("bytes")
                     var singleLimit = call.argument<Int>("singleLimit")
-                    if (singleLimit == null){
+                    if (singleLimit == null) {
                         singleLimit = -1
                     }
                     if (data != null) {
                         try {
-                            val count = usbConnCache[deviceId]!!.writeDataImmediately(data, singleLimit)
-                            result.success(count)
+                            GlobalScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    val count = usbConn.writeDataImmediately(data, singleLimit)
+                                    result.success(count)
+                                }
+                            }
                         } catch (e: Exception) {
                             val error = e.message ?: ""
                             result.error("-1", error, error)
                         }
                     } else {
                         result.success(-1)
+                    }
+                } else {
+                    val error = "usb 设备无法匹配"
+                    result.error("-1", error, error)
+                }
+            }
+            "readBytes" -> {
+                val usbConn = fetchUsbConn(call);
+                if (usbConn != null) {
+                    val timeOut = call.argument<Int>("timeOut")
+                    try {
+                        GlobalScope.launch {
+                            withContext(Dispatchers.Main) {
+                                val data = usbConn.readBytes(timeOut!!)
+                                result.success(data)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        val error = e.message ?: ""
+                        result.error("-1", error, error)
                     }
                 } else {
                     val error = "usb 设备无法匹配"
@@ -175,6 +200,17 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                 result.success(true)
             }
         }
+    }
+
+    private fun fetchUsbConn(call: MethodCall): UsbConn? {
+        val deviceId = MethodCallParser.parseDeviceId(call)
+        if (!usbConnCache.contains(deviceId)) {
+            val device = MethodCallParser.parseDevice(call)
+            if (device != null) {
+                usbConnCache[deviceId] = UsbConn(device.usbDevice)
+            }
+        }
+        return usbConnCache[deviceId]
     }
 
     private fun removeConnCacheWithKey(key: String) {
