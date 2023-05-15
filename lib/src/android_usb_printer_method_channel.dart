@@ -159,7 +159,7 @@ class MethodChannelAndroidUsbPrinter extends AndroidUsbPrinterPlatform {
   Future<dynamic> removeUsbConnCache(UsbDeviceInfo usbDeviceInfo) async {
     final params = generateDeviceMap(usbDeviceInfo);
     return methodChannel.invokeMethod(
-      'requestDevicePermission',
+      'removeUsbConnCache',
       params,
     );
   }
