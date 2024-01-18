@@ -91,7 +91,7 @@ class UsbDeviceHelper private constructor() {
     }
 
     //过滤打印机类型的Usb设备
-    private fun filterPrintUsbDevice(usbDevice: UsbDevice): Boolean {
+    fun filterPrintUsbDevice(usbDevice: UsbDevice): Boolean {
         var isFit = false
         val count: Int = usbDevice.interfaceCount
         for (index in 0 until count) {

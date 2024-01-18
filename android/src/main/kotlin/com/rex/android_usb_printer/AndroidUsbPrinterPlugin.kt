@@ -30,9 +30,13 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
         override fun onDeviceAttached(usbDevice: UsbDevice?) {
             //Usb设备插入
             usbDevice?.let {
-                UsbDeviceHelper.instance.checkPermission(it)?.let { hasPermission ->
-                    if (hasPermission) {
-                        MessageSender.sendUsbPlugStatus(usbDevice, 1)
+                UsbDeviceHelper.instance.filterPrintUsbDevice(usbDevice).let { isPrinter ->
+                    if (isPrinter) {
+                        UsbDeviceHelper.instance.checkPermission(usbDevice)?.let { hasPermission ->
+                            if (hasPermission) {
+                                MessageSender.sendUsbPlugStatus(usbDevice, 1)
+                            }
+                        }
                     }
                 }
             }
@@ -41,16 +45,24 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
         override fun onDeviceDetached(usbDevice: UsbDevice?) {
             //Usb设备拔出
             usbDevice?.let {
-                val deviceId = "${it.vendorId} - ${it.productId} - "
-                removeConnCacheWithKey(deviceId)
-                MessageSender.sendUsbPlugStatus(usbDevice, 0)
+                UsbDeviceHelper.instance.filterPrintUsbDevice(usbDevice).let { isPrinter ->
+                    if (isPrinter) {
+                        val deviceId = "${it.vendorId} - ${it.productId} - "
+                        removeConnCacheWithKey(deviceId)
+                        MessageSender.sendUsbPlugStatus(usbDevice, 0)
+                    }
+                }
             }
         }
 
         override fun onDeviceGranted(usbDevice: UsbDevice, success: Boolean) {
             //Usb设备授权
             if (success) {
-                MessageSender.sendUsbPlugStatus(usbDevice, 2)
+                UsbDeviceHelper.instance.filterPrintUsbDevice(usbDevice).let { isPrinter ->
+                    if (isPrinter) {
+                        MessageSender.sendUsbPlugStatus(usbDevice, 2)
+                    }
+                }
             }
         }
     }
@@ -82,6 +94,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
             "queryLocalUsbDevice" -> {
                 result.success(UsbDeviceHelper.instance.queryLocalPrinterMap())
             }
+
             "writeBytes" -> {
                 val usbConn = fetchUsbConn(call);
                 if (usbConn != null) {
@@ -116,6 +129,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "readBytes" -> {
                 val usbConn = fetchUsbConn(call);
                 if (usbConn != null) {
@@ -142,6 +156,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "checkDeviceConn" -> {
                 val device = MethodCallParser.parseDevice(call)
                 if (device != null) {
@@ -156,6 +171,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "connect" -> {
                 val device = MethodCallParser.parseDevice(call)
                 if (device != null) {
@@ -176,6 +192,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "disconnect" -> {
                 val deviceId = MethodCallParser.parseDeviceId(call)
                 if (usbConnCache.contains(deviceId)) {
@@ -187,6 +204,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "checkDevicePermission" -> {
                 val device = MethodCallParser.parseDevice(call)
                 if (device != null) {
@@ -196,6 +214,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "requestDevicePermission" -> {
                 val device = MethodCallParser.parseDevice(call)
                 if (device != null) {
@@ -206,6 +225,7 @@ class AndroidUsbPrinterPlugin : FlutterPlugin, MethodCallHandler, EventChannel.S
                     result.error("-1", error, error)
                 }
             }
+
             "removeUsbConnCache" -> {
                 val deviceId = MethodCallParser.parseDeviceId(call)
                 removeConnCacheWithKey(deviceId)
