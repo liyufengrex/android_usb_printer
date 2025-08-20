@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.hardware.usb.*
+import android.os.Build
 import io.flutter.Log
 
 /**
@@ -27,11 +28,15 @@ class UsbDeviceHelper private constructor() {
 
     fun init(context: Context) {
         this.mContext = context
+        var flags = 0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags = flags or PendingIntent.FLAG_IMMUTABLE
+        }
         mPermissionIntent = PendingIntent.getBroadcast(
             context,
             0,
             Intent(UsbDeviceReceiver.Config.ACTION_USB_PERMISSION),
-            0
+            flags
         )
         usbManager = context.applicationContext.getSystemService(Context.USB_SERVICE) as UsbManager
     }
